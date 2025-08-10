@@ -563,7 +563,7 @@ Bu döküman [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
-**Yazar:** Taha Bucak  
+**Yazar:** Taha   
 **Tarih:** Ocak 2025  
 **Versiyon:** 1.0.0
 
