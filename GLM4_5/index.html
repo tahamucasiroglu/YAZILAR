@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #90EE90 50%, #7CFC00 100%);
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #startScreen, #gameOverScreen, #countdownScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+        }
+
+        #gameOverScreen, #countdownScreen {
+            display: none;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .button {
+            padding: 15px 40px;
+            font-size: 24px;
+            background: #FFD700;
+            color: #333;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            font-weight: bold;
+        }
+
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            background: #FFA500;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.8;
+        }
+
+        .cloud::before {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+        }
+
+        .cloud1 {
+            width: 100px;
+            height: 40px;
+            top: 20%;
+            animation: moveCloud 57s infinite linear;
+        }
+
+        .cloud1::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 10px;
+        }
+
+        .cloud2 {
+            width: 80px;
+            height: 35px;
+            top: 40%;
+            animation: moveCloud 71s infinite linear;
+            animation-delay: -28s;
+        }
+
+        .cloud2::before {
+            width: 60px;
+            height: 40px;
+            top: -20px;
+            right: 15px;
+        }
+
+        @keyframes moveCloud {
+            from { left: -150px; }
+            to { left: 100%; }
+        }
+
+        #countdownNumber {
+            font-size: 120px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #countdownText {
+            font-size: 24px;
+            margin-top: 20px;
+            color: #FFF;
+        }
+
+        #speedIndicator {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <div id="score">0</div>
+        <div id="speedIndicator">Hız: %35</div>
+        
+        <div id="startScreen">
+            <h1>Flappy Bird</h1>
+            <button class="button" onclick="startCountdown()">Oyna</button>
+            <div id="instructions">
+                <p>Boşluk tuşuna veya ekrana tıklayarak zıpla!</p>
+                <p style="margin-top: 10px; font-size: 14px;">Yavaş hızda oyna</p>
+            </div>
+        </div>
+        
+        <div id="countdownScreen">
+            <div id="countdownNumber">3</div>
+            <div id="countdownText">Hazırlan...</div>
+        </div>
+        
+        <div id="gameOverScreen">
+            <h1>Oyun Bitti!</h1>
+            <p style="font-size: 32px; margin-bottom: 20px;">Skor: <span id="finalScore">0</span></p>
+            <button class="button" onclick="restartGame()">Tekrar Oyna</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const speedIndicator = document.getElementById('speedIndicator');
+        const startScreen = document.getElementById('startScreen');
+        const countdownScreen = document.getElementById('countdownScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
+        const countdownNumber = document.getElementById('countdownNumber');
+
+        // Oyun değişkenleri
+        let gameRunning = false;
+        let score = 0;
+        let animationId;
+        let gameSpeed = 0.35; // Hız %35
+        let countdownInterval;
+
+        // Kuş özellikleri
+        const bird = {
+            x: 100,
+            y: canvas.height / 2,
+            width: 40,
+            height: 30,
+            velocity: 0,
+            gravity: 0.5,
+            jumpPower: -8,
+            color: '#FFD700'
+        };
+
+        // Borular dizisi
+        let pipes = [];
+        const pipeWidth = 60;
+        const pipeGap = 150;
+        const pipeSpeed = 2.1; // Hız ayarlandı
+
+        // Zemin ve çatı yüksekliği
+        const groundHeight = 100;
+        const ceilingHeight = 50;
+
+        // Geri sayımı başlat
+        function startCountdown() {
+            startScreen.style.display = 'none';
+            countdownScreen.style.display = 'flex';
+            
+            let count = 3; // 3 saniye
+            
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownNumber.textContent = count;
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownScreen.style.display = 'none';
+                    startGame();
+                }
+            }, 1000);
+        }
+
+        // Oyunu başlat
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            updateScore();
+            resetBird();
+            pipes = [];
+            gameLoop();
+        }
+
+        // Oyunu yeniden başlat
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            startCountdown();
+        }
+
+        // Kuşu sıfırla
+        function resetBird() {
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+        }
+
+        // Skoru güncelle
+        function updateScore() {
+            scoreElement.textContent = score;
+        }
+
+        // Kuşu zıplat
+        function jump() {
+            if (gameRunning) {
+                bird.velocity = bird.jumpPower;
+            }
+        }
+
+        // Olay dinleyicileri
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        canvas.addEventListener('click', jump);
+
+        // Boru oluştur
+        function createPipe() {
+            const minHeight = 100;
+            const maxHeight = canvas.height - groundHeight - pipeGap - minHeight;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            pipes.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + pipeGap,
+                passed: false
+            });
+        }
+
+        // Boruları güncelle
+        function updatePipes() {
+            // Yeni boru ekle
+            if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 280) {
+                createPipe();
+            }
+
+            // Boruları hareket ettir
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= pipeSpeed * gameSpeed;
+
+                // Skoru güncelle
+                if (!pipes[i].passed && pipes[i].x + pipeWidth < bird.x) {
+                    pipes[i].passed = true;
+                    score++;
+                    updateScore();
+                }
+
+                // Ekran dışındaki boruları sil
+                if (pipes[i].x + pipeWidth < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+        }
+
+        // Çarpışma kontrolü
+        function checkCollision() {
+            // Çatı ve zemin çarpışması
+            if (bird.y - bird.height / 2 <= ceilingHeight || 
+                bird.y + bird.height / 2 >= canvas.height - groundHeight) {
+                return true;
+            }
+
+            // Boru çarpışması
+            for (let pipe of pipes) {
+                if (bird.x + bird.width / 2 > pipe.x && 
+                    bird.x - bird.width / 2 < pipe.x + pipeWidth) {
+                    if (bird.y - bird.height / 2 < pipe.topHeight || 
+                        bird.y + bird.height / 2 > pipe.bottomY) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        // Kuşu çiz
+        function drawBird() {
+            ctx.save();
+            ctx.translate(bird.x, bird.y);
+            
+            // Kuşun rotasyonu
+            const rotation = Math.min(Math.max(bird.velocity * 0.05, -0.3), 0.3);
+            ctx.rotate(rotation);
+            
+            // Kuş gövdesi
+            ctx.fillStyle = bird.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bird.width / 2, bird.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Göz
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(10, -5, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(12, -5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Gaga
+            ctx.fillStyle = '#FF6347';
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(25, 3);
+            ctx.lineTo(15, 6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Kanat
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.ellipse(-5, 5, 15, 10, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // Boruları çiz
+        function drawPipes() {
+            for (let pipe of pipes) {
+                // Üst boru
+                const gradientTop = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+                gradientTop.addColorStop(0, '#228B22');
+                gradientTop.addColorStop(0.5, '#32CD32');
+                gradientTop.addColorStop(1, '#228B22');
+                
+                ctx.fillStyle = gradientTop;
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                
+                // Üst boru kenarlığı
+                ctx.fillStyle = '#006400';
+                ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, pipeWidth + 10, 30);
+                
+                // Alt boru
+                const gradientBottom = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+                gradientBottom.addColorStop(0, '#228B22');
+                gradientBottom.addColorStop(0.5, '#32CD32');
+                gradientBottom.addColorStop(1, '#228B22');
+                
+                ctx.fillStyle = gradientBottom;
+                ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY - groundHeight);
+                
+                // Alt boru kenarlığı
+                ctx.fillStyle = '#006400';
+                ctx.fillRect(pipe.x - 5, pipe.bottomY, pipeWidth + 10, 30);
+            }
+        }
+
+        // Zemini çiz
+        function drawGround() {
+            const gradient = ctx.createLinearGradient(0, canvas.height - groundHeight, 0, canvas.height);
+            gradient.addColorStop(0, '#8B4513');
+            gradient.addColorStop(1, '#654321');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            
+            // Çim
+            ctx.fillStyle = '#228B22';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height - groundHeight);
+                ctx.lineTo(i + 5, canvas.height - groundHeight - 10);
+                ctx.lineTo(i + 10, canvas.height - groundHeight);
+                ctx.fill();
+            }
+        }
+
+        // Çatıyı çiz
+        function drawCeiling() {
+            ctx.fillStyle = '#4682B4';
+            ctx.fillRect(0, 0, canvas.width, ceilingHeight);
+        }
+
+        // Oyun döngüsü
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Ekranı temizle
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Çatıyı çiz
+            drawCeiling();
+
+            // Kuşu güncelle
+            bird.velocity += bird.gravity * gameSpeed;
+            bird.y += bird.velocity * gameSpeed;
+
+            // Boruları güncelle ve çiz
+            updatePipes();
+            drawPipes();
+
+            // Kuşu çiz
+            drawBird();
+
+            // Zemini çiz
+            drawGround();
+
+            // Çarpışma kontrolü
+            if (checkCollision()) {
+                gameOver();
+                return;
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // Oyun bitti
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
