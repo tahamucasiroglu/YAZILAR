@@ -22,5 +22,3 @@ static public class Extension
         return value;
     }
 }
- 
-static public [Return Tipi] [Method Adı] (this [Extension Yapılan Tip]) 
